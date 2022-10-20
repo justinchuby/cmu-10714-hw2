@@ -1,7 +1,5 @@
-import sys
-
-sys.path.append("../python")
 import os
+import sys
 import time
 
 import needle as ndl

@@ -1,13 +1,11 @@
 import sys
 
-sys.path.append("./python")
+import mugrade
 import needle as ndl
 import needle.nn as nn
 import numpy as np
 
-sys.path.append("./apps")
-import mugrade
-from mlp_resnet import *
+from apps.mlp_resnet import *
 
 """Deterministically generate a matrix"""
 
