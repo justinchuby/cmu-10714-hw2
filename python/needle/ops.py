@@ -1,15 +1,14 @@
 """Operatpr table."""
 # Global operator table.
 from numbers import Number
-from typing import Optional, List
-from .autograd import NDArray
-from .autograd import Op, Tensor, Value, TensorOp
-from .autograd import TensorTuple, TensorTupleOp
-import numpy
+from typing import List, Optional
 
 # NOTE: we will numpy as the array_api
 # to backup our computations, this line will change in later homeworks
+import numpy
 import numpy as array_api
+
+from .autograd import NDArray, Op, Tensor, TensorOp, TensorTuple, TensorTupleOp, Value
 
 
 class MakeTensorTuple(TensorTupleOp):
@@ -335,7 +334,6 @@ class ReLU(TensorOp):
 
 def relu(a):
     return ReLU()(a)
-
 
 
 class LogSumExp(TensorOp):
