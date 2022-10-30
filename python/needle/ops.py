@@ -1,6 +1,7 @@
 """Operatpr table."""
 # Global operator table.
 from numbers import Number
+import itertools
 
 # NOTE: we will numpy as the array_api
 # to backup our computations, this line will change in later homeworks

@@ -1,10 +1,10 @@
-"""The module.
-"""
-from typing import Any, Callable, List
+"""The module."""
+from __future__ import annotations
 
-import needle.init as init
+from typing import Any, Callable
+
 import numpy as np
-from needle import ops
+from needle import ops, init
 from needle.autograd import Tensor
 
 
@@ -12,7 +12,7 @@ class Parameter(Tensor):
     """A special kind of tensor that represents parameters."""
 
 
-def _unpack_params(value: object) -> List[Tensor]:
+def _unpack_params(value: object) -> list[Tensor]:
     if isinstance(value, Parameter):
         return [value]
     elif isinstance(value, Module):
@@ -31,7 +31,7 @@ def _unpack_params(value: object) -> List[Tensor]:
         return []
 
 
-def _child_modules(value: object) -> List["Module"]:
+def _child_modules(value: object) -> list[Module]:
     if isinstance(value, Module):
         modules = [value]
         modules.extend(_child_modules(value.__dict__))
@@ -54,11 +54,11 @@ class Module:
     def __init__(self):
         self.training = True
 
-    def parameters(self) -> List[Tensor]:
+    def parameters(self) -> list[Tensor]:
         """Return the list of parameters in the module."""
         return _unpack_params(self.__dict__)
 
-    def _children(self) -> List["Module"]:
+    def _children(self) -> list[Module]:
         return _child_modules(self.__dict__)
 
     def eval(self):
@@ -82,19 +82,47 @@ class Identity(Module):
 
 class Linear(Module):
     def __init__(
-        self, in_features, out_features, bias=True, device=None, dtype="float32"
+        self,
+        in_features: int,
+        out_features: int,
+        bias: bool = True,
+        device=None,
+        dtype: str = "float32",
     ):
+        """
+
+        Args:
+            in_features: size of each input sample
+            out_features: size of each output sample
+            bias: If set to False, the layer will not learn an additive bias.
+        """
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
 
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        self.weight = init.kaiming_uniform(
+            in_features, out_features, device=device, dtype=dtype, requires_grad=True
+        )
+        if bias:
+            self.bias = init.kaiming_uniform(
+                out_features, 1, device=device, dtype=dtype, requires_grad=True
+            )
+        else:
+            self.bias = None
         ### END YOUR SOLUTION
 
     def forward(self, X: Tensor) -> Tensor:
+        """Applies a linear transformation to the incoming data: $y = xA^T + b$.
+
+        The input shape is $(N, H_{in})$ where $H_{in}=\text{in_features}$.
+        The output shape is $(N, H_{out})$ where $H_{out}=\text{out_features}$.
+        """
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        result = X @ self.weight
+        if self.bias is None:
+            return result
+        return result + ops.broadcast_to(self.bias, (X.shape[0], self.out_features))
         ### END YOUR SOLUTION
 
 
