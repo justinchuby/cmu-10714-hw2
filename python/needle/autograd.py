@@ -1,10 +1,14 @@
 """Core data structures."""
-from collections import namedtuple
-from typing import List, NamedTuple, Optional, Tuple, Union
+from __future__ import annotations
+
+import functools
+import operator
+import typing
+
+import numpy
+from beartype import beartype
 
 import needle
-import numpy
-from needle import init
 
 # needle version
 LAZY_MODE = False
@@ -72,7 +76,7 @@ class Op:
     def __call__(self, *args):
         raise NotImplementedError()
 
-    def compute(self, *args: Tuple[NDArray]):
+    def compute(self, *args: NDArray):
         """Calculate forward pass of operator.
 
         Parameters
@@ -88,9 +92,7 @@ class Op:
         """
         raise NotImplementedError()
 
-    def gradient(
-        self, out_grad: "Value", node: "Value"
-    ) -> Union["Value", Tuple["Value"]]:
+    def gradient(self, out_grad: Value, node: Value) -> Value | tuple[Value]:
         """Compute partial adjoint for each input value for a given output adjoint.
 
         Parameters
@@ -109,7 +111,7 @@ class Op:
         """
         raise NotImplementedError()
 
-    def gradient_as_tuple(self, out_grad: "Value", node: "Value") -> Tuple["Value"]:
+    def gradient_as_tuple(self, out_grad: Value, node: Value) -> Tuple[Value]:
         """Convenience method to always return a tuple from gradient call"""
         output = self.gradient(out_grad, node)
         if isinstance(output, tuple):
@@ -138,8 +140,8 @@ class Value:
     """A value in the computational graph."""
 
     # trace of computational graph
-    op: Optional[Op]
-    inputs: List["Value"]
+    op: Op | None
+    inputs: list[Value]
     # The following fields are cached fields for
     # dynamic computation
     cached_data: NDArray
@@ -166,12 +168,12 @@ class Value:
 
     def _init(
         self,
-        op: Optional[Op],
-        inputs: List["Tensor"],
+        op: Op | None,
+        inputs: list[Tensor],
         *,
         num_outputs: int = 1,
-        cached_data: List[object] = None,
-        requires_grad: Optional[bool] = None
+        cached_data: list[object] | None = None,
+        requires_grad: bool | None = None,
     ):
         global TENSOR_COUNTER
         TENSOR_COUNTER += 1
@@ -195,7 +197,7 @@ class Value:
         return value
 
     @classmethod
-    def make_from_op(cls, op: Op, inputs: List["Value"]):
+    def make_from_op(cls, op: Op, inputs: list[Value]):
         value = cls.__new__(cls)
         value._init(op, inputs)
 
@@ -246,10 +248,10 @@ class Tensor(Value):
         self,
         array,
         *,
-        device: Optional[Device] = None,
+        device: Device | None = None,
         dtype=None,
         requires_grad=True,
-        **kwargs
+        **kwargs,
     ):
         if isinstance(array, Tensor):
             if device is None:
@@ -281,7 +283,7 @@ class Tensor(Value):
         return array_api.array(numpy_array, device=device, dtype=dtype)
 
     @staticmethod
-    def make_from_op(op: Op, inputs: List["Value"]):
+    def make_from_op(op: Op, inputs: list[Value]):
         tensor = Tensor.__new__(Tensor)
         tensor._init(op, inputs)
         if not LAZY_MODE:
@@ -340,7 +342,7 @@ class Tensor(Value):
         out_grad = (
             out_grad
             if out_grad
-            else init.ones(*self.shape, dtype=self.dtype, device=self.device)
+            else needle.init.ones(*self.shape, dtype=self.dtype, device=self.device)
         )
         compute_gradient_of_variables(self, out_grad)
 
@@ -369,9 +371,10 @@ class Tensor(Value):
             return needle.ops.MulScalar(other)(self)
 
     def __pow__(self, other):
-        ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
-        ### END YOUR SOLUTION
+        if isinstance(other, Tensor):
+            raise NotImplementedError()
+        else:
+            return needle.ops.PowerScalar(other)(self)
 
     def __sub__(self, other):
         if isinstance(other, Tensor):
@@ -416,23 +419,37 @@ def compute_gradient_of_variables(output_tensor, out_grad):
     """Take gradient of output node with respect to each node in node_list.
 
     Store the computed result in the grad field of each Variable.
+
+    This function propagates the gradient to *every* tensor because backward is
+    only called once in the output tensor.
     """
     # a map from node to a list of gradient contributions from each output node
-    node_to_output_grads_list: Dict[Tensor, List[Tensor]] = {}
+    # Each list of nodes contributes to the gradient of the tensor
+    node_to_output_grads_list: dict[Tensor, list[Tensor]] = {}
     # Special note on initializing gradient of
     # We are really taking a derivative of the scalar reduce_sum(output_node)
     # instead of the vector output_node. But this is the common case for loss function.
     node_to_output_grads_list[output_tensor] = [out_grad]
 
     # Traverse graph in reverse topological order given the output_node that we are taking gradient wrt.
-    reverse_topo_order = list(reversed(find_topo_sort([output_tensor])))
+    reverse_topo_order = typing.cast(
+        list[Tensor], list(reversed(find_topo_sort([output_tensor])))
+    )
 
-    ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
-    ### END YOUR SOLUTION
+    # TODO: Document this
+    for node in reverse_topo_order:
+        v_i_adjoint = sum_node_list(node_to_output_grads_list[node])
+        node.grad = v_i_adjoint
+
+        if node.is_leaf():
+            continue
+
+        gradients = node.op.gradient_as_tuple(v_i_adjoint, node)
+        for k, gradient_k in zip(node.inputs, gradients):
+            node_to_output_grads_list.setdefault(k, []).append(gradient_k)
 
 
-def find_topo_sort(node_list: List[Value]) -> List[Value]:
+def find_topo_sort(node_list: list[Value]) -> list[Value]:
     """Given a list of nodes, return a topological sort list of nodes ending in them.
 
     A simple algorithm is to do a post-order DFS traversal on the given nodes,
@@ -440,16 +457,22 @@ def find_topo_sort(node_list: List[Value]) -> List[Value]:
     after all its predecessors are traversed due to post-order DFS, we get a topological
     sort.
     """
-    ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
-    ### END YOUR SOLUTION
+    visited: set[Value] = set()
+    topo_order: list[Value] = []
+    for node in node_list:
+        topo_sort_dfs(node, visited, topo_order)
+    return topo_order
 
 
-def topo_sort_dfs(node, visited, topo_order):
+def topo_sort_dfs(node: Value, visited: set[Value], topo_order: list[Value]):
     """Post-order DFS"""
-    ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
-    ### END YOUR SOLUTION
+    if node in visited:
+        return
+    # A leaf will have no inputs
+    for input_ in node.inputs:
+        topo_sort_dfs(input_, visited, topo_order)
+    topo_order.append(node)
+    visited.add(node)
 
 
 ##############################
@@ -459,7 +482,5 @@ def topo_sort_dfs(node, visited, topo_order):
 
 def sum_node_list(node_list):
     """Custom sum function in order to avoid create redundant nodes in Python sum implementation."""
-    from functools import reduce
-    from operator import add
 
-    return reduce(add, node_list)
+    return functools.reduce(operator.add, node_list)
