@@ -1,5 +1,6 @@
 """The module."""
 from __future__ import annotations
+import math
 
 from typing import Any, Callable
 
@@ -133,7 +134,7 @@ class Linear(Module):
 class Flatten(Module):
     def forward(self, X):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        return ops.reshape(X, (X.shape[0], math.prod(X.shape[1:])))
         ### END YOUR SOLUTION
 
 
@@ -190,22 +191,26 @@ class LayerNorm1d(Module):
         self.eps = eps
         ### BEGIN YOUR SOLUTION
         # NOTE: Do I need gradient?
-        self.weight = init.constant(dim, c=1, device=device, dtype=dtype, requires_grad=True)
-        self.bias = init.constant(dim, c=0, device=device, dtype=dtype, requires_grad=True)
+        self.weight = init.constant(
+            dim, c=1, device=device, dtype=dtype, requires_grad=True
+        )
+        self.bias = init.constant(
+            dim, c=0, device=device, dtype=dtype, requires_grad=True
+        )
         ### END YOUR SOLUTION
 
     def forward(self, x: Tensor) -> Tensor:
         ### BEGIN YOUR SOLUTION
         # x is 2D tensor
         expectation = ops.reduce_mean(x, axes=(1,))
-        variance = ops.reduce_mean(x ** 2, axes=(1,)) - expectation ** 2
+        variance = ops.reduce_mean(x**2, axes=(1,)) - expectation**2
         N = x.shape[0]
         # TODO: Fix broadcasting here
         weight = ops.broadcast_to(self.weight, (N, self.dim))
         bias = ops.broadcast_to(self.bias, (N, self.dim))
         expectation = ops.broadcast_to(expectation, (N, self.dim))
         variance = ops.broadcast_to(variance, (N, self.dim))
-        return weight * (x - expectation) / ((variance + self.eps) ** (1/2)) + bias
+        return weight * (x - expectation) / ((variance + self.eps) ** (1 / 2)) + bias
         ### END YOUR SOLUTION
 
 
