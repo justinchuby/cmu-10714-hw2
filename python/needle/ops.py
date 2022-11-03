@@ -2,6 +2,7 @@
 # Global operator table.
 from numbers import Number
 import itertools
+import math
 
 # NOTE: we will numpy as the array_api
 # to backup our computations, this line will change in later homeworks
@@ -384,3 +385,9 @@ class LogSumExp(TensorOp):
 
 def logsumexp(a, axes=None):
     return LogSumExp(axes=axes)(a)
+
+
+def reduce_mean(x: Tensor, axes=None):
+    reduced_shape = axes if axes is not None else range(len(x.shape))
+    reduced_dims = [x.shape[dim] for dim in reduced_shape]
+    return summation(x, axes=axes) / math.prod(reduced_dims)

@@ -182,17 +182,30 @@ class BatchNorm1d(Module):
 
 
 class LayerNorm1d(Module):
-    def __init__(self, dim, eps=1e-5, device=None, dtype="float32"):
+    def __init__(
+        self, dim: int, eps: float = 1e-5, device=None, dtype: str = "float32"
+    ):
         super().__init__()
         self.dim = dim
         self.eps = eps
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        # NOTE: Do I need gradient?
+        self.weight = init.constant(dim, c=1, device=device, dtype=dtype, requires_grad=True)
+        self.bias = init.constant(dim, c=0, device=device, dtype=dtype, requires_grad=True)
         ### END YOUR SOLUTION
 
     def forward(self, x: Tensor) -> Tensor:
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        # x is 2D tensor
+        expectation = ops.reduce_mean(x, axes=(1,))
+        variance = ops.reduce_mean(x ** 2, axes=(1,)) - expectation ** 2
+        N = x.shape[0]
+        # TODO: Fix broadcasting here
+        weight = ops.broadcast_to(self.weight, (N, self.dim))
+        bias = ops.broadcast_to(self.bias, (N, self.dim))
+        expectation = ops.broadcast_to(expectation, (N, self.dim))
+        variance = ops.broadcast_to(variance, (N, self.dim))
+        return weight * (x - expectation) / ((variance + self.eps) ** (1/2)) + bias
         ### END YOUR SOLUTION
 
 
