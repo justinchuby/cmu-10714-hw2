@@ -105,9 +105,9 @@ class Linear(Module):
             in_features, out_features, device=device, dtype=dtype, requires_grad=True
         )
         if bias:
-            self.bias = ops.transpose(init.kaiming_uniform(
+            self.bias = ops.reshape(init.kaiming_uniform(
                 out_features, 1, device=device, dtype=dtype, requires_grad=True
-            ))
+            ), (1, out_features))
         else:
             self.bias = None
         ### END YOUR SOLUTION

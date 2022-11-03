@@ -134,7 +134,10 @@ class PowerScalar(TensorOp):
         return a**self.scalar
 
     def gradient(self, out_grad: Tensor, node: Tensor):
-        return self.scalar * power_scalar(out_grad, (self.scalar - 1))
+        # NOTE: This is tricky!
+        # This is wrong:
+        # return self.scalar * power_scalar(, (self.scalar - 1))
+        return out_grad * self.scalar * power_scalar(node.inputs[0], (self.scalar - 1))
 
 
 def power_scalar(a, scalar):
@@ -356,9 +359,18 @@ class LogSumExp(TensorOp):
     def __init__(self, axes: tuple | None = None):
         self.axes = axes
 
+    # TODO: Memoize this
+    def _single_axes(self, input_rank: int):
+        return [
+            axis
+            for axis in range(input_rank)
+            if self.axes is None or axis not in self.axes
+        ]
+
     def compute(self, Z):
         ### BEGIN YOUR SOLUTION
         max_z = array_api.max(Z, axis=self.axes)
+        array_api.expand_dims(max_z, self._single_axes(len(Z.shape)))
         exponentiated = array_api.exp(Z - max_z)
         return array_api.log(array_api.sum(exponentiated, axis=self.axes)) + max_z
         ### END YOUR SOLUTION
