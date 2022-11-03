@@ -105,9 +105,12 @@ class Linear(Module):
             in_features, out_features, device=device, dtype=dtype, requires_grad=True
         )
         if bias:
-            self.bias = ops.reshape(init.kaiming_uniform(
-                out_features, 1, device=device, dtype=dtype, requires_grad=True
-            ), (1, out_features))
+            self.bias = ops.reshape(
+                init.kaiming_uniform(
+                    out_features, 1, device=device, dtype=dtype, requires_grad=True
+                ),
+                (1, out_features),
+            )
         else:
             self.bias = None
         ### END YOUR SOLUTION
@@ -122,7 +125,8 @@ class Linear(Module):
         result = X @ self.weight
         if self.bias is None:
             return result
-        return result + ops.broadcast_to(self.bias, (X.shape[0], self.out_features))
+        # return result + ops.broadcast_to(self.bias, (X.shape[0], self.out_features))
+        return result + ops.broadcast_to(self.bias, (*X.shape[:-1], self.out_features))
         ### END YOUR SOLUTION
 
 

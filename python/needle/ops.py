@@ -230,7 +230,8 @@ class BroadcastTo(TensorOp):
             assert input_dim == 1 or input_dim == -1
             reduce_axes.append(axis)
         # Need to reshape to maintain dim=1 axes
-        return reshape(summation(out_grad, tuple(reduce_axes)), input_shape)
+        summed_grad = summation(out_grad, tuple(reduce_axes))
+        return reshape(summed_grad, input_shape)
 
 
 def broadcast_to(a, shape):

@@ -779,31 +779,31 @@ def test_nn_linear_forward_3():
     )
 
 
-def simple_linear_backward(lhs_shape, rhs_shape):
-    np.random.seed(199)
-    f = ndl.nn.Linear(*lhs_shape)
-    f.bias.data = get_tensor(lhs_shape[-1])
-    x = get_tensor(*rhs_shape)
-    (f(x ** 2)).sum().backward()
-    return f, x, x.grad.cached_data
+# def simple_linear_backward(lhs_shape, rhs_shape):
+#     np.random.seed(199)
+#     f = ndl.nn.Linear(*lhs_shape)
+#     f.bias.data = get_tensor(lhs_shape[-1])
+#     x = get_tensor(*rhs_shape)
+#     (f(x ** 2)).sum().backward()
+#     return f, x, x.grad.cached_data
 
 
-def test_nn_simple_linear_backward():
-    model, x, actual = simple_linear_backward((10, 5), (1, 10))
-    try:
-        import torch
-    except ImportError:
-        pytest.skip("torch not installed")
-    torch_model = torch.nn.Linear(*(10, 5))
-    torch_model.weight = torch.nn.Parameter(torch.tensor(model.weight.numpy().T))
-    torch_model.bias = torch.nn.Parameter(torch.tensor(model.bias.numpy()))
-    x = torch.nn.Parameter(torch.tensor(x.numpy()))
-    print(torch_model.weight.shape)
-    output = torch_model(x) ** 2
-    print(output)
-    output.sum().backward()
-    print("torch", x.grad)
-    print("needle", actual)
+# def test_nn_simple_linear_backward():
+#     model, x, actual = simple_linear_backward((10, 5), (1, 10))
+#     try:
+#         import torch
+#     except ImportError:
+#         pytest.skip("torch not installed")
+#     torch_model = torch.nn.Linear(*(10, 5))
+#     torch_model.weight = torch.nn.Parameter(torch.tensor(model.weight.numpy().T))
+#     torch_model.bias = torch.nn.Parameter(torch.tensor(model.bias.numpy()))
+#     x = torch.nn.Parameter(torch.tensor(x.numpy()))
+#     print(torch_model.weight.shape)
+#     output = torch_model(x) ** 2
+#     print(output)
+#     output.sum().backward()
+#     print("torch", x.grad)
+#     print("needle", actual)
 
 
 def test_nn_linear_backward_1():
