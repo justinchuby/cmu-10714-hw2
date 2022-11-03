@@ -136,7 +136,7 @@ class Flatten(Module):
 class ReLU(Module):
     def forward(self, x: Tensor) -> Tensor:
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        return ops.relu(x)
         ### END YOUR SOLUTION
 
 
@@ -147,7 +147,10 @@ class Sequential(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        intermediates = x
+        for module in self.modules:
+            intermediates = module(x)
+        return intermediates
         ### END YOUR SOLUTION
 
 
