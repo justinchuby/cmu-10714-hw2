@@ -153,7 +153,7 @@ class Sequential(Module):
         ### BEGIN YOUR SOLUTION
         intermediates = x
         for module in self.modules:
-            intermediates = module(x)
+            intermediates = module(intermediates)
         return intermediates
         ### END YOUR SOLUTION
 
