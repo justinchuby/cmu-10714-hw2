@@ -1,3 +1,4 @@
+import abc
 from typing import Any, Iterable, Iterator, List, Optional, Sized, Union
 
 import numpy as np
@@ -5,7 +6,8 @@ import numpy as np
 from .autograd import Tensor
 
 
-class Transform:
+class Transform(abc.ABC):
+    @abc.abstractmethod
     def __call__(self, x):
         raise NotImplementedError
 
@@ -14,7 +16,7 @@ class RandomFlipHorizontal(Transform):
     def __init__(self, p=0.5):
         self.p = p
 
-    def __call__(self, img):
+    def __call__(self, img: np.ndarray):
         """
         Horizonally flip an image, specified as n H x W x C NDArray.
         Args:
@@ -25,7 +27,9 @@ class RandomFlipHorizontal(Transform):
         """
         flip_img = np.random.rand() < self.p
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        if not flip_img:
+            return img
+        return np.flip(img, axis=1)
         ### END YOUR SOLUTION
 
 
@@ -45,7 +49,20 @@ class RandomCrop(Transform):
             low=-self.padding, high=self.padding + 1, size=2
         )
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        # The tests specified an opposite direction
+        shift_x = -shift_x
+        shift_y = -shift_y
+        shifted = np.roll(img, shift_x, axis=0)
+        shifted = np.roll(shifted, shift_y, axis=1)
+        if shift_x < 0:
+            shifted[shift_x:, :] = 0
+        elif shift_x > 0:
+            shifted[:shift_x, :] = 0
+        if shift_y < 0:
+            shifted[:, shift_y:] = 0
+        elif shift_y > 0:
+            shifted[:, :shift_y] = 0
+        return shifted
         ### END YOUR SOLUTION
 
 
