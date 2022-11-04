@@ -343,7 +343,8 @@ def dropout_forward(shape, prob=0.5):
     np.random.seed(3)
     x = get_tensor(*shape)
     f = nn.Dropout(prob)
-    return f(x).cached_data
+    result = f(x).cached_data
+    return result
 
 
 def dropout_backward(shape, prob=0.5):

@@ -117,7 +117,7 @@ class Linear(Module):
         ### END YOUR SOLUTION
 
     def forward(self, X: Tensor) -> Tensor:
-        """Applies a linear transformation to the incoming data: $y = xA^T + b$.
+        r"""Applies a linear transformation to the incoming data: $y = xA^T + b$.
 
         The input shape is $(N, H_{in})$ where $H_{in}=\text{in_features}$.
         The output shape is $(N, H_{out})$ where $H_{out}=\text{out_features}$.
@@ -223,16 +223,19 @@ class Dropout(Module):
         if not self.training:
             return x
         # Create a zeroed mask
-        mask = init.randb(*x.shape, p=self.p, device=x.device, dtype=x.dtype)
+        # NOTE: Remember to divide by (1 - p) to scale the mask
+        keep_prob = 1 - self.p
+        mask = init.randb(*x.shape, p=keep_prob, device=x.device, dtype=x.dtype) / keep_prob
         return x * mask
 
 
 class Residual(Module):
+    """Applies a skip connection given module and input Tensor x, returning module(x) + x."""
     def __init__(self, fn: Module):
         super().__init__()
         self.fn = fn
 
     def forward(self, x: Tensor) -> Tensor:
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        return self.fn(x) + x
         ### END YOUR SOLUTION
