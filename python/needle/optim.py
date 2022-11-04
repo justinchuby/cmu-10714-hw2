@@ -21,12 +21,16 @@ class Optimizer:
 
 class SGD(Optimizer):
     def __init__(
-        self, params: Sequence[ndl.Tensor], lr=0.01, momentum=0.0, weight_decay=0.0
+        self,
+        params: Sequence[ndl.nn.Parameter],
+        lr: float = 0.01,
+        momentum: float = 0.0,
+        weight_decay: float = 0.0,
     ):
         super().__init__(params)
         self.lr = lr
         self.momentum = momentum
-        self.u: dict[ndl.Tensor, ndl.Tensor] = {}
+        self.u: dict[ndl.nn.Parameter, ndl.Tensor] = {}
         self.weight_decay = weight_decay
 
     def step(self):
@@ -49,12 +53,13 @@ class SGD(Optimizer):
 class Adam(Optimizer):
     def __init__(
         self,
-        params,
-        lr=0.01,
-        beta1=0.9,
-        beta2=0.999,
-        eps=1e-8,
-        weight_decay=0.0,
+        params: Sequence[ndl.nn.Parameter],
+        lr: float = 0.01,
+        beta1: float = 0.9,
+        beta2: float = 0.999,
+        eps: float = 1e-8,
+        bias_correction: bool = False,
+        weight_decay: float = 0.0,
     ):
         super().__init__(params)
         self.lr = lr
@@ -62,12 +67,36 @@ class Adam(Optimizer):
         self.beta2 = beta2
         self.eps = eps
         self.weight_decay = weight_decay
+        self.bias_correction = bias_correction
         self.t = 0
 
-        self.m = {}
-        self.v = {}
+        self.m: dict[ndl.nn.Parameter, ndl.Tensor] = {}
+        self.v: dict[ndl.nn.Parameter, ndl.Tensor] = {}
 
     def step(self):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        # Important: Pay attention to whether or not you are applying bias correction.
+        self.t += 1
+        for param in self.params:
+            if param in self.m:
+                m_t = self.m[param]
+            else:
+                m_t = 0
+            if param in self.v[param]:
+                v_t = self.v[param]
+            else:
+                v_t = 0
+
+            self.m[param] = self.beta1 * m_t + (1 - self.beta1) * param.grad.detach()
+            self.v[param] = self.beta2 * v_t + (1 - self.beta2) * (
+                param.grad.detach() ** 2
+            )
+
+            if self.bias_correction:
+                self.m[param] = self.m[param].detach() / (1 - self.beta1**self.t)
+                self.v[param] = self.v[param].detach() / (1 - self.beta2**self.t)
+
+            param.data = param.detach() - self.lr * self.m[param] / (
+                self.v[param] ** (1 / 2) + self.eps
+            )
         ### END YOUR SOLUTION
