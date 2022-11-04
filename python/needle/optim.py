@@ -1,4 +1,8 @@
 """Optimization module"""
+from __future__ import annotations
+
+from typing import Sequence
+
 import needle as ndl
 import numpy as np
 
@@ -16,16 +20,29 @@ class Optimizer:
 
 
 class SGD(Optimizer):
-    def __init__(self, params, lr=0.01, momentum=0.0, weight_decay=0.0):
+    def __init__(
+        self, params: Sequence[ndl.Tensor], lr=0.01, momentum=0.0, weight_decay=0.0
+    ):
         super().__init__(params)
         self.lr = lr
         self.momentum = momentum
-        self.u = {}
+        self.u: dict[ndl.Tensor, ndl.Tensor] = {}
         self.weight_decay = weight_decay
 
     def step(self):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        for param in self.params:
+            if param in self.u and self.momentum > 0:
+                u_t = self.u[param]
+                self.u[param] = (
+                    self.momentum * u_t + (1 - self.momentum) * param.grad.detach()
+                )
+            else:
+                # TODO: What should the initial update be?
+                self.u[param] = (1 - self.momentum) * param.grad.detach()
+            param.data = param.detach() - self.lr * (
+                self.u[param] + self.weight_decay * param.detach()
+            )
         ### END YOUR SOLUTION
 
 
