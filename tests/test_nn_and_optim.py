@@ -1989,6 +1989,7 @@ def submit_optim_sgd():
         learn_model_1d(
             48,
             16,
+            # NOTE: There is a BatchNorm1d here
             lambda z: nn.Sequential(
                 nn.Linear(48, 32), nn.ReLU(), nn.BatchNorm1d(32), nn.Linear(32, 16)
             ),

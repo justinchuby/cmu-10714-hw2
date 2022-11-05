@@ -49,10 +49,7 @@ class SGD(Optimizer):
                 self.u[param] = (1 - self.momentum) * grad
 
             updated = param.detach() - self.lr * self.u[param]
-            param.data = ndl.Tensor(
-                updated,
-                dtype=param.dtype,
-            )
+            param.data = ndl.Tensor(updated, dtype=param.dtype)
         ### END YOUR SOLUTION
 
 
@@ -84,6 +81,11 @@ class Adam(Optimizer):
         # Important: Pay attention to whether or not you are applying bias correction.
         self.t += 1
         for param in self.params:
+            if self.weight_decay > 0:
+                grad = param.grad.detach() + param.detach() * self.weight_decay
+            else:
+                grad = param.grad.detach()
+
             if param in self.m:
                 m_t = self.m[param]
             else:
@@ -93,18 +95,16 @@ class Adam(Optimizer):
             else:
                 v_t = 0
 
-            self.m[param] = self.beta1 * m_t + (1 - self.beta1) * param.grad.detach()
-            self.v[param] = self.beta2 * v_t + (1 - self.beta2) * (
-                param.grad.detach() ** 2
-            )
+            self.m[param] = self.beta1 * m_t + (1 - self.beta1) * grad
+            self.v[param] = self.beta2 * v_t + (1 - self.beta2) * (grad**2)
 
             if self.bias_correction:
                 self.m[param] = self.m[param].detach() / (1 - self.beta1**self.t)
                 self.v[param] = self.v[param].detach() / (1 - self.beta2**self.t)
 
-            param.data = ndl.Tensor(
-                param.detach()
-                - self.lr * self.m[param] / (self.v[param] ** (1 / 2) + self.eps),
-                dtype=param.dtype,
+            updated = param.detach() - self.lr * self.m[param] / (
+                self.v[param] ** (1 / 2) + self.eps
             )
+
+            param.data = ndl.Tensor(updated, dtype=param.dtype)
         ### END YOUR SOLUTION

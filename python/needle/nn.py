@@ -180,6 +180,7 @@ class SoftmaxLoss(Module):
 
 
 class BatchNorm1d(Module):
+    # FIXME: test_nn_batchnorm_backward_affine_1
     def __init__(self, dim, eps=1e-5, momentum=0.1, device=None, dtype="float32"):
         super().__init__()
         self.dim = dim
@@ -187,16 +188,16 @@ class BatchNorm1d(Module):
         self.momentum = momentum
         ### BEGIN YOUR SOLUTION
         self.weight = Parameter(
-            init.constant(1, c=1, device=device, dtype=dtype, requires_grad=True)
+            init.constant(1, c=1, device=device, dtype=dtype), requires_grad=True
         )
         self.bias = Parameter(
-            init.constant(1, c=0, device=device, dtype=dtype, requires_grad=True)
+            init.constant(1, c=0, device=device, dtype=dtype), requires_grad=True
         )
         self.running_mean = init.constant(
-            1, c=0, device=device, dtype=dtype, requires_grad=True
+            1, c=0, device=device, dtype=dtype, requires_grad=False
         )
         self.running_var = init.constant(
-            1, c=1, device=device, dtype=dtype, requires_grad=True
+            1, c=1, device=device, dtype=dtype, requires_grad=False
         )
         ### END YOUR SOLUTION
 
