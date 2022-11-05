@@ -206,17 +206,20 @@ class MNISTDataset(Dataset):
         ### END YOUR SOLUTION
 
     def __getitem__(self, index_or_slice) -> object:
+        # NOTE: Input can be a slice which is tricky to handle
         ### BEGIN YOUR SOLUTION
         if isinstance(index_or_slice, slice):
             image = self.images[index_or_slice]
             label = self.labels[index_or_slice]
+            image = image.transpose(1, 2, 0)
             image = self.apply_transforms(image)
-            return np.reshape(image, (len(image), -1)), label
+            image = image.transpose(2, 0, 1)
+            return image, label
 
         image = self.images[index_or_slice]
         label = self.labels[index_or_slice]
         image = self.apply_transforms(image)
-        return image.flatten(), label
+        return image, label
         ### END YOUR SOLUTION
 
     def __len__(self) -> int:
