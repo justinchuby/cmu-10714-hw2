@@ -358,28 +358,56 @@ def relu(a):
 
 
 class LogSumExp(TensorOp):
+    """LSE provides an approximation to the largest element of x."""
+
     def __init__(self, axes: tuple | None = None):
         self.axes = axes
 
-    # TODO: Memoize this
-    def _single_axes(self, input_rank: int):
-        return [
-            axis
-            for axis in range(input_rank)
-            if self.axes is None or axis not in self.axes
-        ]
+    def _axes_to_expand(self, input_rank):
+        return tuple(range(input_rank)) if self.axes is None else self.axes
+
+    def _expanded_shape(self, input_shape):
+        if self.axes is None:
+            # Expand to all dims
+            return [1] * len(input_shape)
+        shape = []
+        axes = set(self.axes)
+        for i, size in enumerate(input_shape):
+            if i in axes:
+                # Reduced, add it back
+                shape.append(1)
+            else:
+                shape.append(size)
+        return shape
 
     def compute(self, Z):
         ### BEGIN YOUR SOLUTION
         max_z = array_api.max(Z, axis=self.axes)
-        array_api.expand_dims(max_z, self._single_axes(len(Z.shape)))
-        exponentiated = array_api.exp(Z - max_z)
+        input_rank = len(Z.shape)
+        # NOTE: Important to expanded correctly here to avoid ambiguity in broadcasting
+        expanded_max_z = array_api.expand_dims(max_z, self._axes_to_expand(input_rank))
+        exponentiated = array_api.exp(Z - expanded_max_z)
         return array_api.log(array_api.sum(exponentiated, axis=self.axes)) + max_z
         ### END YOUR SOLUTION
 
     def gradient(self, out_grad, node):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        # The gradient of LogSumExp boils down to the softmax of (Zi - max(Z))
+        Z = node.inputs[0]
+        Z_shape = Z.shape
+        input_rank = len(Z_shape)
+        max_z = array_api.max(Z.numpy(), axis=self.axes)
+        expanded_max_z = array_api.expand_dims(max_z, self._axes_to_expand(input_rank))
+        expanded_max_z = Tensor.make_const(expanded_max_z)
+        broadcasted_max_z = broadcast_to(expanded_max_z, Z_shape)
+        exponentiated = exp(Z - broadcasted_max_z)
+        summed = summation(exponentiated, axes=self.axes)
+
+        out_grad = reshape(out_grad, self._expanded_shape(Z_shape))
+        out_grad = broadcast_to(out_grad, Z_shape)
+        summed = reshape(summed, self._expanded_shape(Z_shape))
+        summed = broadcast_to(summed, Z_shape)
+        return out_grad * (exponentiated / summed)
         ### END YOUR SOLUTION
 
 
