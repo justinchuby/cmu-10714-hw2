@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+from typing import Optional
 
 import needle as ndl
 import needle.nn as nn
@@ -9,7 +10,9 @@ import numpy as np
 np.random.seed(0)
 
 
-def ResidualBlock(dim, hidden_dim, norm=nn.BatchNorm1d, drop_prob=0.1) -> nn.Module:
+def ResidualBlock(
+    dim: int, hidden_dim: int, norm=nn.BatchNorm1d, drop_prob: float = 0.1
+) -> nn.Module:
     ### BEGIN YOUR SOLUTION
     sequential = nn.Sequential(
         nn.Linear(dim, hidden_dim),
@@ -24,19 +27,19 @@ def ResidualBlock(dim, hidden_dim, norm=nn.BatchNorm1d, drop_prob=0.1) -> nn.Mod
 
 
 def MLPResNet(
-    dim,
-    hidden_dim=100,
-    num_blocks=3,
-    num_classes=10,
+    dim: int,
+    hidden_dim: int = 100,
+    num_blocks: int = 3,
+    num_classes: int = 10,
     norm=nn.BatchNorm1d,
-    drop_prob=0.1,
+    drop_prob: float = 0.1,
 ):
     ### BEGIN YOUR SOLUTION
     return nn.Sequential(
         nn.Linear(dim, hidden_dim),
         nn.ReLU(),
         *[
-            ResidualBlock(hidden_dim, hidden_dim//2, norm=norm, drop_prob=drop_prob)
+            ResidualBlock(hidden_dim, hidden_dim // 2, norm=norm, drop_prob=drop_prob)
             for _ in range(num_blocks)
         ],
         nn.Linear(hidden_dim, num_classes)
@@ -44,10 +47,38 @@ def MLPResNet(
     ### END YOUR SOLUTION
 
 
-def epoch(dataloader, model, opt=None):
+def epoch(dataloader: ndl.data.DataLoader, model: nn.Module, opt: Optional[ndl.optim.Optimizer]=None):
     np.random.seed(4)
     ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
+    loss_func = nn.SoftmaxLoss()
+
+    error_rates = []
+    losses = []
+    model.training = opt is not None
+
+    if model.training:
+        for i, batch in enumerate(dataloader):
+            batch_images, batch_labels = batch[0], batch[1]
+            opt.reset_grad()
+            out = model(batch_images)
+            loss = loss_func(out, batch_labels)
+            corrects = np.argmax(out.numpy(), axis=1) == batch_labels.numpy()
+            error_rates.append(corrects)
+            loss.backward()
+            losses.append(loss.numpy())
+            opt.step()
+    else:
+        for i, batch in enumerate(dataloader):
+            batch_images, batch_labels = batch[0], batch[1]
+            out = model(batch_images)
+            loss = loss_func(out, batch_labels)
+            corrects = np.argmax(out.numpy(), axis=1) == batch_labels.numpy()
+            error_rates.append(corrects)
+            losses.append(loss.numpy())
+
+    error_rate = np.concatenate(error_rates).mean()
+    loss = np.concatenate(losses).mean()
+    return error_rate, loss
     ### END YOUR SOLUTION
 
 
