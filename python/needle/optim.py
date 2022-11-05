@@ -44,8 +44,10 @@ class SGD(Optimizer):
             else:
                 # TODO: What should the initial update be?
                 self.u[param] = (1 - self.momentum) * param.grad.detach()
-            param.data = param.detach() - self.lr * (
-                self.u[param] + self.weight_decay * param.detach()
+            param.data = ndl.Tensor(
+                param.detach()
+                - self.lr * (self.u[param] + self.weight_decay * param.detach()),
+                dtype=param.dtype,
             )
         ### END YOUR SOLUTION
 
@@ -96,7 +98,9 @@ class Adam(Optimizer):
                 self.m[param] = self.m[param].detach() / (1 - self.beta1**self.t)
                 self.v[param] = self.v[param].detach() / (1 - self.beta2**self.t)
 
-            param.data = param.detach() - self.lr * self.m[param] / (
-                self.v[param] ** (1 / 2) + self.eps
+            param.data = ndl.Tensor(
+                param.detach()
+                - self.lr * self.m[param] / (self.v[param] ** (1 / 2) + self.eps),
+                dtype=param.dtype,
             )
         ### END YOUR SOLUTION
