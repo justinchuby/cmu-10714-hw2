@@ -186,12 +186,45 @@ class BatchNorm1d(Module):
         self.eps = eps
         self.momentum = momentum
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        self.weight = Parameter(
+            init.constant(1, c=1, device=device, dtype=dtype, requires_grad=True)
+        )
+        self.bias = Parameter(
+            init.constant(1, c=0, device=device, dtype=dtype, requires_grad=True)
+        )
+        self.running_mean = init.constant(
+            1, c=0, device=device, dtype=dtype, requires_grad=True
+        )
+        self.running_var = init.constant(
+            1, c=1, device=device, dtype=dtype, requires_grad=True
+        )
         ### END YOUR SOLUTION
 
     def forward(self, x: Tensor) -> Tensor:
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        if self.training:
+            expectation = ops.reduce_mean(x, axes=(0,))
+            variance = ops.reduce_mean(x**2, axes=(0,)) - expectation**2
+
+            # Update running mean and variance
+            self.running_mean = (
+                (1 - self.momentum) * self.running_mean + self.momentum * expectation
+            ).detach()
+            self.running_var = (
+                (1 - self.momentum) * self.running_var + self.momentum * variance
+            ).detach()
+        else:
+            expectation = self.running_mean
+            variance = self.running_var
+        # Compute norm
+        N = x.shape[0]
+        weight = ops.broadcast_to(self.weight, (N, self.dim))
+        bias = ops.broadcast_to(self.bias, (N, self.dim))
+        expectation = ops.broadcast_to(
+            ops.reshape(expectation, (1, self.dim)), (N, self.dim)
+        )
+        variance = ops.broadcast_to(ops.reshape(variance, (1, self.dim)), (N, self.dim))
+        return weight * (x - expectation) / ((variance + self.eps) ** (1 / 2)) + bias
         ### END YOUR SOLUTION
 
 
@@ -203,18 +236,18 @@ class LayerNorm1d(Module):
         self.dim = dim
         self.eps = eps
         ### BEGIN YOUR SOLUTION
-        # NOTE: Do I need gradient?
         self.weight = Parameter(
-            init.constant(1, dim, c=1, device=device, dtype=dtype, requires_grad=True)
+            init.constant(1, c=1, device=device, dtype=dtype, requires_grad=True)
         )
         self.bias = Parameter(
-            init.constant(1, dim, c=0, device=device, dtype=dtype, requires_grad=True)
+            init.constant(1, c=0, device=device, dtype=dtype, requires_grad=True)
         )
         ### END YOUR SOLUTION
 
     def forward(self, x: Tensor) -> Tensor:
         ### BEGIN YOUR SOLUTION
         # x is 2D tensor
+        # FIXME: Backward when batch==dim
         expectation = ops.reduce_mean(x, axes=(1,))
         variance = ops.reduce_mean(x**2, axes=(1,)) - expectation**2
         N = x.shape[0]
