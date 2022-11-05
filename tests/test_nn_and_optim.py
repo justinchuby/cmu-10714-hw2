@@ -1,5 +1,6 @@
 import sys
 
+import pytest
 import mugrade
 import needle as ndl
 import needle.nn as nn
@@ -342,7 +343,8 @@ def dropout_forward(shape, prob=0.5):
     np.random.seed(3)
     x = get_tensor(*shape)
     f = nn.Dropout(prob)
-    return f(x).cached_data
+    result = f(x).cached_data
+    return result
 
 
 def dropout_backward(shape, prob=0.5):
@@ -776,6 +778,33 @@ def test_nn_linear_forward_3():
         rtol=1e-5,
         atol=1e-5,
     )
+
+
+# def simple_linear_backward(lhs_shape, rhs_shape):
+#     np.random.seed(199)
+#     f = ndl.nn.Linear(*lhs_shape)
+#     f.bias.data = get_tensor(lhs_shape[-1])
+#     x = get_tensor(*rhs_shape)
+#     (f(x ** 2)).sum().backward()
+#     return f, x, x.grad.cached_data
+
+
+# def test_nn_simple_linear_backward():
+#     model, x, actual = simple_linear_backward((10, 5), (1, 10))
+#     try:
+#         import torch
+#     except ImportError:
+#         pytest.skip("torch not installed")
+#     torch_model = torch.nn.Linear(*(10, 5))
+#     torch_model.weight = torch.nn.Parameter(torch.tensor(model.weight.numpy().T))
+#     torch_model.bias = torch.nn.Parameter(torch.tensor(model.bias.numpy()))
+#     x = torch.nn.Parameter(torch.tensor(x.numpy()))
+#     print(torch_model.weight.shape)
+#     output = torch_model(x) ** 2
+#     print(output)
+#     output.sum().backward()
+#     print("torch", x.grad)
+#     print("needle", actual)
 
 
 def test_nn_linear_backward_1():

@@ -1454,7 +1454,7 @@ def submit_flip_horizontal():
         mugrade.submit(tform(np.random.rand(size_a, size_b, size_c)))
 
 
-def test_random_crop():
+def test_random_crop_1():
     tform = ndl.data.RandomCrop(2)
     np.random.seed(0)
     a = np.array(
@@ -2215,6 +2215,7 @@ def test_random_crop():
     )
     np.testing.assert_allclose(tform(a), b)
 
+def test_random_crop_2():
     tform = ndl.data.RandomCrop(4)
     np.random.seed(0)
     a = np.array(
@@ -3051,8 +3052,10 @@ def test_random_crop():
             ],
         ]
     )
-    np.testing.assert_allclose(tform(a), b)
+    print(actual := tform(a))
+    np.testing.assert_allclose(actual, b)
 
+def test_random_crop_3():
     tform = ndl.data.RandomCrop(4)
     np.random.seed(0)
     a = np.array(
@@ -5105,6 +5108,7 @@ def test_random_crop():
     )
     np.testing.assert_allclose(tform(a), b)
 
+def test_random_crop_4():
     tform = ndl.data.RandomCrop(4)
     np.random.seed(0)
     a = np.array(
@@ -5392,6 +5396,7 @@ def test_random_crop():
     )
     np.testing.assert_allclose(tform(a), b)
 
+def test_random_crop_5():
     tform = ndl.data.RandomCrop(8)
     np.random.seed(0)
     a = np.array(
@@ -5712,6 +5717,7 @@ def test_random_crop():
     )
     np.testing.assert_allclose(tform(a), b)
 
+def test_random_crop_6():
     tform = ndl.data.RandomCrop(1)
     np.random.seed(0)
     a = np.array(
@@ -6025,6 +6031,7 @@ def test_random_crop():
     )
     np.testing.assert_allclose(tform(a), b)
 
+def test_random_crop_7():
     tform = ndl.data.RandomCrop(2)
     np.random.seed(0)
     a = np.array(
@@ -6259,6 +6266,7 @@ def test_random_crop():
     )
     np.testing.assert_allclose(tform(a), b)
 
+def test_random_crop_8():
     tform = ndl.data.RandomCrop(1)
     np.random.seed(0)
     a = np.array(
@@ -9843,6 +9851,7 @@ def test_random_crop():
     )
     np.testing.assert_allclose(tform(a), b)
 
+def test_random_crop_9():
     tform = ndl.data.RandomCrop(5)
     np.random.seed(0)
     a = np.array(
@@ -10239,6 +10248,7 @@ def test_random_crop():
     )
     np.testing.assert_allclose(tform(a), b)
 
+def test_random_crop_10():
     tform = ndl.data.RandomCrop(8)
     np.random.seed(0)
     a = np.array(
