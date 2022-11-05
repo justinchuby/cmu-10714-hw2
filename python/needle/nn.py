@@ -205,10 +205,10 @@ class LayerNorm1d(Module):
         ### BEGIN YOUR SOLUTION
         # NOTE: Do I need gradient?
         self.weight = Parameter(
-            init.constant(dim, c=1, device=device, dtype=dtype, requires_grad=True)
+            init.constant(1, dim, c=1, device=device, dtype=dtype, requires_grad=True)
         )
         self.bias = Parameter(
-            init.constant(dim, c=0, device=device, dtype=dtype, requires_grad=True)
+            init.constant(1, dim, c=0, device=device, dtype=dtype, requires_grad=True)
         )
         ### END YOUR SOLUTION
 
@@ -218,11 +218,10 @@ class LayerNorm1d(Module):
         expectation = ops.reduce_mean(x, axes=(1,))
         variance = ops.reduce_mean(x**2, axes=(1,)) - expectation**2
         N = x.shape[0]
-        # TODO: Fix broadcasting here
         weight = ops.broadcast_to(self.weight, (N, self.dim))
         bias = ops.broadcast_to(self.bias, (N, self.dim))
-        expectation = ops.broadcast_to(expectation, (N, self.dim))
-        variance = ops.broadcast_to(variance, (N, self.dim))
+        expectation = ops.broadcast_to(ops.reshape(expectation, (N, 1)), (N, self.dim))
+        variance = ops.broadcast_to(ops.reshape(variance, (N, 1)), (N, self.dim))
         return weight * (x - expectation) / ((variance + self.eps) ** (1 / 2)) + bias
         ### END YOUR SOLUTION
 
