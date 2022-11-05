@@ -10823,6 +10823,7 @@ def submit_mnist_dataset():
     mnist_train_dataset = ndl.data.MNISTDataset(
         "data/train-images-idx3-ubyte.gz", "data/train-labels-idx1-ubyte.gz"
     )
+    # FIXME: This one fails
     mugrade.submit(mnist_train_dataset[69][:25])
     mugrade.submit(len(mnist_train_dataset))
     np.random.seed(0)

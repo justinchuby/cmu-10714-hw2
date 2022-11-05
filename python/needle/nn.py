@@ -238,10 +238,10 @@ class LayerNorm1d(Module):
         self.eps = eps
         ### BEGIN YOUR SOLUTION
         self.weight = Parameter(
-            init.constant(1, c=1, device=device, dtype=dtype, requires_grad=True)
+            init.constant(1, c=1, device=device, dtype=dtype), requires_grad=True
         )
         self.bias = Parameter(
-            init.constant(1, c=0, device=device, dtype=dtype, requires_grad=True)
+            init.constant(1, c=0, device=device, dtype=dtype), requires_grad=True
         )
         ### END YOUR SOLUTION
 
