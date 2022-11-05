@@ -102,15 +102,23 @@ class Linear(Module):
         self.out_features = out_features
 
         ### BEGIN YOUR SOLUTION
-        self.weight = init.kaiming_uniform(
-            in_features, out_features, device=device, dtype=dtype, requires_grad=True
+        self.weight = Parameter(
+            init.kaiming_uniform(
+                in_features,
+                out_features,
+                device=device,
+                dtype=dtype,
+                requires_grad=True,
+            )
         )
         if bias:
-            self.bias = ops.reshape(
-                init.kaiming_uniform(
-                    out_features, 1, device=device, dtype=dtype, requires_grad=True
-                ),
-                (1, out_features),
+            self.bias = Parameter(
+                ops.reshape(
+                    init.kaiming_uniform(
+                        out_features, 1, device=device, dtype=dtype, requires_grad=True
+                    ),
+                    (1, out_features),
+                )
             )
         else:
             self.bias = None
@@ -162,7 +170,12 @@ class Sequential(Module):
 class SoftmaxLoss(Module):
     def forward(self, logits: Tensor, y: Tensor):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        classes = logits.shape[1]
+        onehot = init.one_hot(classes, y, device=logits.device, dtype=logits.dtype)
+        lse = ops.logsumexp(logits, axes=(1,))
+        # NOTE: This should be sum, not reduce_mean!
+        z_y = ops.summation(logits * onehot, axes=(1,))
+        return ops.reduce_mean(lse - z_y)
         ### END YOUR SOLUTION
 
 
@@ -191,11 +204,11 @@ class LayerNorm1d(Module):
         self.eps = eps
         ### BEGIN YOUR SOLUTION
         # NOTE: Do I need gradient?
-        self.weight = init.constant(
-            dim, c=1, device=device, dtype=dtype, requires_grad=True
+        self.weight = Parameter(
+            init.constant(dim, c=1, device=device, dtype=dtype, requires_grad=True)
         )
-        self.bias = init.constant(
-            dim, c=0, device=device, dtype=dtype, requires_grad=True
+        self.bias = Parameter(
+            init.constant(dim, c=0, device=device, dtype=dtype, requires_grad=True)
         )
         ### END YOUR SOLUTION
 
@@ -225,12 +238,16 @@ class Dropout(Module):
         # Create a zeroed mask
         # NOTE: Remember to divide by (1 - p) to scale the mask
         keep_prob = 1 - self.p
-        mask = init.randb(*x.shape, p=keep_prob, device=x.device, dtype=x.dtype) / keep_prob
+        mask = (
+            init.randb(*x.shape, p=keep_prob, device=x.device, dtype=x.dtype)
+            / keep_prob
+        )
         return x * mask
 
 
 class Residual(Module):
     """Applies a skip connection given module and input Tensor x, returning module(x) + x."""
+
     def __init__(self, fn: Module):
         super().__init__()
         self.fn = fn

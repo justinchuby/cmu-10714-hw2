@@ -82,7 +82,7 @@ class Adam(Optimizer):
                 m_t = self.m[param]
             else:
                 m_t = 0
-            if param in self.v[param]:
+            if param in self.v:
                 v_t = self.v[param]
             else:
                 v_t = 0
