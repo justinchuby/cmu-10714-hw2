@@ -36,17 +36,21 @@ class SGD(Optimizer):
     def step(self):
         ### BEGIN YOUR SOLUTION
         for param in self.params:
+            # NOTE: Important weight_decay is added to grad first
+            if self.weight_decay > 0:
+                grad = param.grad.detach() + param.detach() * self.weight_decay
+            else:
+                grad = param.grad.detach()
             if param in self.u and self.momentum > 0:
                 u_t = self.u[param]
-                self.u[param] = (
-                    self.momentum * u_t + (1 - self.momentum) * param.grad.detach()
-                )
+                self.u[param] = self.momentum * u_t + (1 - self.momentum) * grad
             else:
                 # TODO: What should the initial update be?
-                self.u[param] = (1 - self.momentum) * param.grad.detach()
+                self.u[param] = (1 - self.momentum) * grad
+
+            updated = param.detach() - self.lr * self.u[param]
             param.data = ndl.Tensor(
-                param.detach()
-                - self.lr * (self.u[param] + self.weight_decay * param.detach()),
+                updated,
                 dtype=param.dtype,
             )
         ### END YOUR SOLUTION

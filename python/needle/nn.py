@@ -214,8 +214,8 @@ class BatchNorm1d(Module):
                 (1 - self.momentum) * self.running_var + self.momentum * variance
             ).detach()
         else:
-            expectation = self.running_mean
-            variance = self.running_var
+            expectation = self.running_mean.detach()
+            variance = self.running_var.detach()
         # Compute norm
         N = x.shape[0]
         weight = ops.broadcast_to(self.weight, (N, self.dim))
