@@ -14,15 +14,15 @@ def ResidualBlock(
     dim: int, hidden_dim: int, norm=nn.BatchNorm1d, drop_prob: float = 0.1
 ) -> nn.Module:
     ### BEGIN YOUR SOLUTION
-    sequential = nn.Sequential(
-        nn.Linear(dim, hidden_dim),
-        norm(hidden_dim),
-        nn.ReLU(),
-        nn.Dropout(drop_prob),
-        nn.Linear(hidden_dim, dim),
-        norm(dim),
+    sequential = (
+        nn.Linear(dim, hidden_dim)
+        | norm(hidden_dim)
+        | nn.ReLU()
+        | nn.Dropout(drop_prob)
+        | nn.Linear(hidden_dim, dim)
+        | norm(dim)
     )
-    return nn.Residual(sequential)
+    return nn.Residual(sequential) | nn.ReLU()
     ### END YOUR SOLUTION
 
 
@@ -47,7 +47,11 @@ def MLPResNet(
     ### END YOUR SOLUTION
 
 
-def epoch(dataloader: ndl.data.DataLoader, model: nn.Module, opt: Optional[ndl.optim.Optimizer]=None):
+def epoch(
+    dataloader: ndl.data.DataLoader,
+    model: nn.Module,
+    opt: Optional[ndl.optim.Optimizer] = None,
+):
     np.random.seed(4)
     ### BEGIN YOUR SOLUTION
     loss_func = nn.SoftmaxLoss()

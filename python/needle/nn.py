@@ -75,6 +75,12 @@ class Module:
     def __call__(self, *args, **kwargs):
         return self.forward(*args, **kwargs)
 
+    def __or__(self, other: Module):
+        if isinstance(self, Sequential):
+            self.modules = (*self.modules, other)
+            return self
+        return Sequential(self, other)
+
 
 class Identity(Module):
     def forward(self, x):

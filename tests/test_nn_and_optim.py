@@ -357,6 +357,8 @@ def dropout_backward(shape, prob=0.5):
 
 
 def num_params(model):
+    # for x in model.parameters():
+    #     print(x, x.shape)
     return np.sum([np.prod(x.shape) for x in model.parameters()])
 
 
