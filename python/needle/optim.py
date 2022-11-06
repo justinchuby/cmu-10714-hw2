@@ -61,7 +61,7 @@ class Adam(Optimizer):
         beta1: float = 0.9,
         beta2: float = 0.999,
         eps: float = 1e-8,
-        bias_correction: bool = False,
+        bias_correction: bool = True,
         weight_decay: float = 0.0,
     ):
         super().__init__(params)
@@ -82,7 +82,8 @@ class Adam(Optimizer):
         self.t += 1
         for param in self.params:
             if self.weight_decay > 0:
-                grad = param.grad.detach() + param.detach() * self.weight_decay
+                assert False
+                # grad = param.grad.detach() + param.detach() * self.weight_decay
             else:
                 grad = param.grad.detach()
 
