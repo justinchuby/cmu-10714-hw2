@@ -89,21 +89,22 @@ class Adam(Optimizer):
             if param in self.m:
                 m_t = self.m[param]
             else:
-                m_t = 0
+                m_t = 1
             if param in self.v:
                 v_t = self.v[param]
             else:
-                v_t = 0
+                v_t = 1
 
-            self.m[param] = self.beta1 * m_t + (1 - self.beta1) * grad
-            self.v[param] = self.beta2 * v_t + (1 - self.beta2) * (grad**2)
+            m_hat = self.m[param] = self.beta1 * m_t + (1 - self.beta1) * grad
+            v_hat = self.v[param] = self.beta2 * v_t + (1 - self.beta2) * grad * grad
 
             if self.bias_correction:
-                self.m[param] = self.m[param].detach() / (1 - self.beta1**self.t)
-                self.v[param] = self.v[param].detach() / (1 - self.beta2**self.t)
+                assert False
+                m_hat = self.m[param] / (1 - self.beta1**self.t)
+                v_hat = self.v[param] / (1 - self.beta2**self.t)
 
-            updated = param.detach() - self.lr * self.m[param] / (
-                self.v[param] ** (1 / 2) + self.eps
+            updated = param.detach() - self.lr * m_hat / (
+                v_hat ** 0.5 + self.eps
             )
 
             param.data = ndl.Tensor(updated, dtype=param.dtype)

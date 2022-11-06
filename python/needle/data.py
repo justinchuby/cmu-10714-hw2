@@ -214,12 +214,12 @@ class MNISTDataset(Dataset):
             image = image.transpose(1, 2, 0)
             image = self.apply_transforms(image)
             image = image.transpose(2, 0, 1)
-            return image, label
+            return image.reshape((image.shape[0], -1)), label
 
         image = self.images[index_or_slice]
         label = self.labels[index_or_slice]
         image = self.apply_transforms(image)
-        return image, label
+        return image.flatten(), label
         ### END YOUR SOLUTION
 
     def __len__(self) -> int:

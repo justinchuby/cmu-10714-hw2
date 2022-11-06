@@ -56,8 +56,8 @@ def epoch(
     ### BEGIN YOUR SOLUTION
     loss_func = nn.SoftmaxLoss()
 
-    error_rates = []
-    losses = []
+    all_corrects = []
+    all_losses = []
     model.training = opt is not None
 
     if model.training:
@@ -67,9 +67,9 @@ def epoch(
             out = model(batch_images)
             loss = loss_func(out, batch_labels)
             corrects = np.argmax(out.numpy(), axis=1) == batch_labels.numpy()
-            error_rates.append(corrects)
+            all_corrects.append(corrects)
             loss.backward()
-            losses.append(loss.numpy())
+            all_losses.append(loss.numpy())
             opt.step()
     else:
         for i, batch in enumerate(dataloader):
@@ -77,11 +77,11 @@ def epoch(
             out = model(batch_images)
             loss = loss_func(out, batch_labels)
             corrects = np.argmax(out.numpy(), axis=1) == batch_labels.numpy()
-            error_rates.append(corrects)
-            losses.append(loss.numpy())
+            all_corrects.append(corrects)
+            all_losses.append(loss.numpy())
 
-    error_rate = np.concatenate(error_rates).mean()
-    loss = np.concatenate(losses).mean()
+    error_rate = 1 - np.concatenate(all_corrects).mean()
+    loss = np.array(all_losses).mean()
     return error_rate, loss
     ### END YOUR SOLUTION
 
