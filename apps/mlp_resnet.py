@@ -109,14 +109,12 @@ def train_mnist(
 
     model = MLPResNet(784, hidden_dim)
     opt = optimizer(model.parameters(), lr=lr, weight_decay=weight_decay)
-    model.train()
     for _ in range(epochs):
         error_rate, loss = epoch(train_dataloader, model, opt)
 
-    model.eval()
     test_error, test_loss = epoch(train_dataloader, model, None)
 
-    return (1 - error_rate, loss, 1 - test_error, test_loss)
+    return (error_rate, loss, test_error, test_loss)
     ### END YOUR SOLUTION
 
 
