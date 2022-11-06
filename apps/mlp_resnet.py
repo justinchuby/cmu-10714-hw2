@@ -69,7 +69,7 @@ def epoch(
             corrects = np.argmax(out.numpy(), axis=1) == batch_labels.numpy()
             all_corrects.append(corrects)
             loss.backward()
-            all_losses.append(loss.numpy())
+            all_losses.append([loss.numpy()] * len(batch))
             opt.step()
     else:
         for i, batch in enumerate(dataloader):
@@ -78,10 +78,10 @@ def epoch(
             loss = loss_func(out, batch_labels)
             corrects = np.argmax(out.numpy(), axis=1) == batch_labels.numpy()
             all_corrects.append(corrects)
-            all_losses.append(loss.numpy())
+            all_losses.append([loss.numpy()] * len(batch))
 
     error_rate = 1 - np.concatenate(all_corrects).mean()
-    loss = np.array(all_losses).mean()
+    loss = np.concatenate(all_losses).mean()
     return error_rate, loss
     ### END YOUR SOLUTION
 

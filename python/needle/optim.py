@@ -82,8 +82,7 @@ class Adam(Optimizer):
         self.t += 1
         for param in self.params:
             if self.weight_decay > 0:
-                assert False
-                # grad = param.grad.detach() + param.detach() * self.weight_decay
+                grad = param.grad.detach() + param.detach() * self.weight_decay
             else:
                 grad = param.grad.detach()
 
