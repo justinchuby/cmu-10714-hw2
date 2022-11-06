@@ -87,19 +87,22 @@ class Adam(Optimizer):
                 grad = param.grad.detach()
 
             if param in self.m:
+                assert self.t > 1
                 m_t = self.m[param]
             else:
-                m_t = 1
+                assert self.t == 1
+                m_t = 0
             if param in self.v:
+                assert self.t > 1
                 v_t = self.v[param]
             else:
-                v_t = 1
+                assert self.t == 1
+                v_t = 0
 
             m_hat = self.m[param] = self.beta1 * m_t + (1 - self.beta1) * grad
             v_hat = self.v[param] = self.beta2 * v_t + (1 - self.beta2) * grad * grad
 
             if self.bias_correction:
-                assert False
                 m_hat = self.m[param] / (1 - self.beta1**self.t)
                 v_hat = self.v[param] / (1 - self.beta2**self.t)
 
