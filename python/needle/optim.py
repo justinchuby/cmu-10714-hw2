@@ -49,10 +49,7 @@ class SGD(Optimizer):
                 self.u[param] = (1 - self.momentum) * grad
 
             updated = param.detach() - self.lr * self.u[param]
-            param.data = ndl.Tensor(
-                updated,
-                dtype=param.dtype,
-            )
+            param.data = ndl.Tensor(updated, dtype=param.dtype)
         ### END YOUR SOLUTION
 
 
@@ -64,7 +61,7 @@ class Adam(Optimizer):
         beta1: float = 0.9,
         beta2: float = 0.999,
         eps: float = 1e-8,
-        bias_correction: bool = False,
+        bias_correction: bool = True,
         weight_decay: float = 0.0,
     ):
         super().__init__(params)
@@ -84,27 +81,34 @@ class Adam(Optimizer):
         # Important: Pay attention to whether or not you are applying bias correction.
         self.t += 1
         for param in self.params:
+            if self.weight_decay > 0:
+                grad = param.grad.detach() + param.detach() * self.weight_decay
+            else:
+                grad = param.grad.detach()
+
             if param in self.m:
+                assert self.t > 1
                 m_t = self.m[param]
             else:
+                assert self.t == 1
                 m_t = 0
             if param in self.v:
+                assert self.t > 1
                 v_t = self.v[param]
             else:
+                assert self.t == 1
                 v_t = 0
 
-            self.m[param] = self.beta1 * m_t + (1 - self.beta1) * param.grad.detach()
-            self.v[param] = self.beta2 * v_t + (1 - self.beta2) * (
-                param.grad.detach() ** 2
-            )
+            m_hat = self.m[param] = self.beta1 * m_t + (1 - self.beta1) * grad
+            v_hat = self.v[param] = self.beta2 * v_t + (1 - self.beta2) * grad * grad
 
             if self.bias_correction:
-                self.m[param] = self.m[param].detach() / (1 - self.beta1**self.t)
-                self.v[param] = self.v[param].detach() / (1 - self.beta2**self.t)
+                m_hat = self.m[param] / (1 - self.beta1**self.t)
+                v_hat = self.v[param] / (1 - self.beta2**self.t)
 
-            param.data = ndl.Tensor(
-                param.detach()
-                - self.lr * self.m[param] / (self.v[param] ** (1 / 2) + self.eps),
-                dtype=param.dtype,
+            updated = param.detach() - self.lr * m_hat / (
+                v_hat ** 0.5 + self.eps
             )
+
+            param.data = ndl.Tensor(updated, dtype=param.dtype)
         ### END YOUR SOLUTION

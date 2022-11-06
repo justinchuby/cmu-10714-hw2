@@ -1,5 +1,8 @@
 import abc
+import gzip
+import struct
 from typing import Any, Iterable, Iterator, List, Optional, Sized, Union
+from collections import OrderedDict
 
 import numpy as np
 
@@ -66,7 +69,7 @@ class RandomCrop(Transform):
         ### END YOUR SOLUTION
 
 
-class Dataset:
+class Dataset(abc.ABC):
     r"""An abstract class representing a `Dataset`.
 
     All subclasses should overwrite :meth:`__getitem__`, supporting fetching a
@@ -91,7 +94,7 @@ class Dataset:
         return x
 
 
-class DataLoader:
+class DataLoader(abc.ABC):
     r"""
     Data loader. Combines a dataset and a sampler, and provides an iterable over
     the given dataset.
@@ -102,13 +105,11 @@ class DataLoader:
         shuffle (bool, optional): set to ``True`` to have the data reshuffled
             at every epoch (default: ``False``).
     """
-    dataset: Dataset
-    batch_size: Optional[int]
 
     def __init__(
         self,
         dataset: Dataset,
-        batch_size: Optional[int] = 1,
+        batch_size: int = 1,
         shuffle: bool = False,
     ):
 
@@ -119,17 +120,75 @@ class DataLoader:
             self.ordering = np.array_split(
                 np.arange(len(dataset)), range(batch_size, len(dataset), batch_size)
             )
+        self._i = 0
 
     def __iter__(self):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        # Reshuffle the ordering if shuffle
+        if self.shuffle:
+            self.ordering = np.array_split(
+                np.random.permutation(len(self.dataset)),
+                range(self.batch_size, len(self.dataset), self.batch_size),
+            )
         ### END YOUR SOLUTION
         return self
 
     def __next__(self):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        if self._i >= len(self.ordering):
+            self._i = 0
+            raise StopIteration
+        batch = self.ordering[self._i]
+        output = OrderedDict()
+        # TODO: Can this be simplified?
+        for i in batch:
+            example = self.dataset[i]
+            if isinstance(example, tuple):
+                for j, value in enumerate(example):
+                    output.setdefault(j, []).append(value)
+            else:
+                output.setdefault(0, []).append(example)
+        for key in output:
+            output[key] = Tensor(np.stack(output[key]))
+        self._i += 1
+        return tuple(output.values())
         ### END YOUR SOLUTION
+
+
+def parse_mnist(
+    image_filesname: str, label_filename: str
+) -> tuple[np.ndarray, np.ndarray, int]:
+    """Read an images and labels file in MNIST format.  See this page:
+    http://yann.lecun.com/exdb/mnist/ for a description of the file format.
+
+    Args:
+        image_filename (str): name of gzipped images file in MNIST format
+        label_filename (str): name of gzipped labels file in MNIST format
+
+    Returns:
+        tuple (X,y):
+            X (numpy.ndarray[np.float32]): 3D numpy array containing the loaded
+                data.
+
+            y (numpy.ndarray[dypte=np.uint8]): 1D numpy array containing the
+                labels of the examples.  Values should be of type np.uint8 and
+                for MNIST will contain the values 0-9.
+    """
+    # Load images
+    with gzip.open(image_filesname) as f:
+        magic, n_images, rows, cols = struct.unpack(">IIII", f.read(16))
+        print("magic number is", magic)
+        # f already points to the first image
+        image_data = np.frombuffer(f.read(), dtype=np.uint8).reshape(
+            n_images, rows, cols
+        )
+        images = image_data.astype(np.float32) / 255.0
+
+    with gzip.open(label_filename) as f:
+        magic, n_labels = struct.unpack(">II", f.read(8))
+        labels = np.frombuffer(f.read(), dtype=np.uint8)
+
+    return images, labels, n_images
 
 
 class MNISTDataset(Dataset):
@@ -140,17 +199,32 @@ class MNISTDataset(Dataset):
         transforms: Optional[List] = None,
     ):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        self.images, self.labels, self.n_images = parse_mnist(
+            image_filename, label_filename
+        )
+        self.transforms = transforms
         ### END YOUR SOLUTION
 
-    def __getitem__(self, index) -> object:
+    def __getitem__(self, index_or_slice) -> object:
+        # NOTE: Input can be a slice which is tricky to handle
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        if isinstance(index_or_slice, slice):
+            image = self.images[index_or_slice]
+            label = self.labels[index_or_slice]
+            image = image.transpose(1, 2, 0)
+            image = self.apply_transforms(image)
+            image = image.transpose(2, 0, 1)
+            return image.reshape((image.shape[0], -1)), label
+
+        image = self.images[index_or_slice]
+        label = self.labels[index_or_slice]
+        image = self.apply_transforms(image)
+        return image.flatten(), label
         ### END YOUR SOLUTION
 
     def __len__(self) -> int:
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        return self.n_images
         ### END YOUR SOLUTION
 
 

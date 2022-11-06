@@ -75,6 +75,12 @@ class Module:
     def __call__(self, *args, **kwargs):
         return self.forward(*args, **kwargs)
 
+    def __or__(self, other: Module):
+        if isinstance(self, Sequential):
+            self.modules = (*self.modules, other)
+            return self
+        return Sequential(self, other)
+
 
 class Identity(Module):
     def forward(self, x):
@@ -134,7 +140,6 @@ class Linear(Module):
         result = X @ self.weight
         if self.bias is None:
             return result
-        # return result + ops.broadcast_to(self.bias, (X.shape[0], self.out_features))
         return result + ops.broadcast_to(self.bias, (*X.shape[:-1], self.out_features))
         ### END YOUR SOLUTION
 
@@ -180,23 +185,26 @@ class SoftmaxLoss(Module):
 
 
 class BatchNorm1d(Module):
+    # FIXME: test_nn_batchnorm_backward_affine_1
     def __init__(self, dim, eps=1e-5, momentum=0.1, device=None, dtype="float32"):
         super().__init__()
         self.dim = dim
         self.eps = eps
         self.momentum = momentum
         ### BEGIN YOUR SOLUTION
+        # NOTE: Question: How many parameters are there, really?
+        # Important: weight and bias has one value for each dimension
         self.weight = Parameter(
-            init.constant(1, c=1, device=device, dtype=dtype, requires_grad=True)
+            init.constant(1, dim, c=1, device=device, dtype=dtype), requires_grad=True
         )
         self.bias = Parameter(
-            init.constant(1, c=0, device=device, dtype=dtype, requires_grad=True)
+            init.constant(1, dim, c=0, device=device, dtype=dtype), requires_grad=True
         )
         self.running_mean = init.constant(
-            1, c=0, device=device, dtype=dtype, requires_grad=True
+            dim, c=0, device=device, dtype=dtype, requires_grad=False
         )
         self.running_var = init.constant(
-            1, c=1, device=device, dtype=dtype, requires_grad=True
+            dim, c=1, device=device, dtype=dtype, requires_grad=False
         )
         ### END YOUR SOLUTION
 
@@ -236,11 +244,13 @@ class LayerNorm1d(Module):
         self.dim = dim
         self.eps = eps
         ### BEGIN YOUR SOLUTION
+        # NOTE: The weight size is important. The weight is per element
+        # https://pytorch.org/docs/stable/generated/torch.nn.LayerNorm.html
         self.weight = Parameter(
-            init.constant(1, c=1, device=device, dtype=dtype, requires_grad=True)
+            init.constant(1, dim, c=1, device=device, dtype=dtype), requires_grad=True
         )
         self.bias = Parameter(
-            init.constant(1, c=0, device=device, dtype=dtype, requires_grad=True)
+            init.constant(1, dim, c=0, device=device, dtype=dtype), requires_grad=True
         )
         ### END YOUR SOLUTION
 
