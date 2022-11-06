@@ -42,7 +42,7 @@ def MLPResNet(
             ResidualBlock(hidden_dim, hidden_dim // 2, norm=norm, drop_prob=drop_prob)
             for _ in range(num_blocks)
         ],
-        nn.Linear(hidden_dim, num_classes)
+        nn.Linear(hidden_dim, num_classes),
     )
     ### END YOUR SOLUTION
 
@@ -58,7 +58,11 @@ def epoch(
 
     all_corrects = []
     all_losses = []
-    model.training = opt is not None
+
+    if opt is not None:
+        model.train()
+    else:
+        model.eval()
 
     if model.training:
         for i, batch in enumerate(dataloader):
@@ -97,7 +101,22 @@ def train_mnist(
 ):
     np.random.seed(4)
     ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
+    train_dataset = ndl.data.MNISTDataset(
+        f"./{data_dir}/train-images-idx3-ubyte.gz",
+        f"./{data_dir}/train-labels-idx1-ubyte.gz",
+    )
+    train_dataloader = ndl.data.DataLoader(dataset=train_dataset, batch_size=batch_size)
+
+    model = MLPResNet(784, hidden_dim)
+    opt = optimizer(model.parameters(), lr=lr, weight_decay=weight_decay)
+    model.train()
+    for _ in range(epochs):
+        error_rate, loss = epoch(train_dataloader, model, opt)
+
+    model.eval()
+    test_error, test_loss = epoch(train_dataloader, model, None)
+
+    return (1 - error_rate, loss, 1 - test_error, test_loss)
     ### END YOUR SOLUTION
 
 
