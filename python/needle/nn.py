@@ -134,7 +134,6 @@ class Linear(Module):
         result = X @ self.weight
         if self.bias is None:
             return result
-        # return result + ops.broadcast_to(self.bias, (X.shape[0], self.out_features))
         return result + ops.broadcast_to(self.bias, (*X.shape[:-1], self.out_features))
         ### END YOUR SOLUTION
 
@@ -187,17 +186,19 @@ class BatchNorm1d(Module):
         self.eps = eps
         self.momentum = momentum
         ### BEGIN YOUR SOLUTION
+        # NOTE: Question: How many parameters are there, really?
+        # Important: weight and bias has one value for each dimension
         self.weight = Parameter(
-            init.constant(1, c=1, device=device, dtype=dtype), requires_grad=True
+            init.constant(1, dim, c=1, device=device, dtype=dtype), requires_grad=True
         )
         self.bias = Parameter(
-            init.constant(1, c=0, device=device, dtype=dtype), requires_grad=True
+            init.constant(1, dim, c=0, device=device, dtype=dtype), requires_grad=True
         )
         self.running_mean = init.constant(
-            1, c=0, device=device, dtype=dtype, requires_grad=False
+            dim, c=0, device=device, dtype=dtype, requires_grad=False
         )
         self.running_var = init.constant(
-            1, c=1, device=device, dtype=dtype, requires_grad=False
+            dim, c=1, device=device, dtype=dtype, requires_grad=False
         )
         ### END YOUR SOLUTION
 
@@ -237,11 +238,13 @@ class LayerNorm1d(Module):
         self.dim = dim
         self.eps = eps
         ### BEGIN YOUR SOLUTION
+        # NOTE: The weight size is important. The weight is per element
+        # https://pytorch.org/docs/stable/generated/torch.nn.LayerNorm.html
         self.weight = Parameter(
-            init.constant(1, c=1, device=device, dtype=dtype), requires_grad=True
+            init.constant(1, dim, c=1, device=device, dtype=dtype), requires_grad=True
         )
         self.bias = Parameter(
-            init.constant(1, c=0, device=device, dtype=dtype), requires_grad=True
+            init.constant(1, dim, c=0, device=device, dtype=dtype), requires_grad=True
         )
         ### END YOUR SOLUTION
 
